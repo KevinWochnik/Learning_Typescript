@@ -1,20 +1,6 @@
-// const person: {
-//   name: string;
-//   age: number;
-// }
-const person: {
-    name: string,
-    age: number,
-    hobbies: string[],
-    role: [number, string] // TUPLE
-} = {
-  name: "Kevin",
-  age: 24,
-  hobbies: ["sports", "cookies"],
-  role: [2, "author"],
+let userInput: unknown;
+
+let generateError = (message: string, code: number): never => {
+  throw { message, errorCode: code };
 };
-
-person.role.push("admin");
-person.role[1] = 10;
-
-console.log(person.name);
+generateError('error',500)
