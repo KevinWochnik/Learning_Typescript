@@ -1,6 +1,3 @@
-let userInput: unknown;
+const userName = 'Max'
+console.log(userName)
 
-let generateError = (message: string, code: number): never => {
-  throw { message, errorCode: code };
-};
-generateError('error',500)
