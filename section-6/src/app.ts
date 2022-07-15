@@ -1,134 +1,180 @@
-type Admin = {
-  name: string;
-  privileges: string[];
-};
-
-type Employee = {
-  name: string;
-  startDate: Date;
-};
-
-type ElevatedEmployee = Admin & Employee;
-
-const e1: ElevatedEmployee = {
-  name: "",
-  privileges: ["c"],
-  startDate: new Date(),
-};
-
-type Combinable = string | number;
-type Numeric = number | boolean;
-
-type Universal = Combinable & Numeric;
-
-function adding(a: number, b: number): number;
-function adding(a: string, b: string): string;
-
-// TYPE GUARDS
-function adding(a: Combinable, b: Combinable) {
-  if (typeof a === "string" || typeof b === "string") {
-    return a.toString() + b.toString();
-  }
-  return a + b;
+function Logger(logString: string) {
+  return function (constructor: Function) {
+    console.log(logString);
+    console.log(constructor);
+  };
 }
 
-const result = adding("kev", "woc");
-result.split("");
-
-type UnknownEmployee = Employee | Admin; //UNION TYPE
-
-function printEmpInf(emp: UnknownEmployee) {
-  console.log("name" + emp.name);
-
-  // TYPE GUARD
-  if ("privileges" in emp) {
-    console.log("privileges " + emp.privileges);
-  }
-  if ("startDate" in emp) {
-    console.log("startDate " + emp.startDate);
-  }
+function WithTemplate(template: string, hookId: string) {
+  console.log("TEMPLATE FACTORY");
+  return function <T extends { new (...args: any[]): { name: string } }>(
+    originalConstructor: T
+  ) {
+    return class extends originalConstructor {
+      constructor(..._: any[]) {
+        super();
+        const hookElement = document.getElementById(hookId);
+        if (hookElement) {
+          hookElement.innerHTML = template;
+          hookElement.querySelector("h1")!.textContent = this.name;
+        }
+      }
+    };
+  };
 }
-printEmpInf(e1);
 
-class Motor {
-  drive() {
-    console.log("Driving...");
-  }
-}
-class Trolly {
-  drive() {
-    console.log("Driving a trolly");
-  }
-  loadCargo(amount: number) {
-    console.log("Loading Cargo  " + amount);
+@Logger("LOGGING - PERSON")
+@WithTemplate("<h1>My person obj</h1>", "app")
+class Person {
+  name = "Kev";
+  constructor() {
+    console.log("Creating new person");
   }
 }
 
-type Vehicle = Motor | Trolly;
+const pers = new Person();
 
-const v1 = new Motor();
-const v2 = new Trolly();
+console.log(pers);
 
-function useVehicle(vehicle: Vehicle) {
-  vehicle.drive();
-  if (vehicle instanceof Trolly) {
-    vehicle.loadCargo(2);
+function Log(target: any, propertyName: string | Symbol) {
+  console.log("access decorator");
+  console.log(target, propertyName);
+}
+function Log2(target: any, name: string, description: PropertyDescriptor) {
+  console.log("Accessor decorator");
+  console.log(target);
+  console.log(name);
+  console.log(description);
+}
+function TextDecorator(
+  target: any,
+  name: string | Symbol,
+  description: PropertyDescriptor
+) {
+  console.log("Method decorator");
+  console.log(target);
+  console.log(name);
+  console.log(description);
+}
+function LogParameter(target: any, name: string | Symbol, position: number) {
+  console.log("Parameter decorator");
+  console.log(target);
+  console.log(name);
+  console.log(position);
+}
+
+class Product {
+  @Log
+  @Log2
+  set price(val: number) {
+    if (val > 0) {
+      this._price = val;
+    } else {
+      throw new Error("Invalid price - should be positive");
+    }
+  }
+  constructor(public title: string, private _price: number) {}
+  @TextDecorator
+  getPriceWithTax(@LogParameter tax: number) {
+    return this._price * (1 + tax);
+  }
+}
+type methodType = string | Symbol | number;
+
+function Autobind(_: any, _2: methodType, descriptor: PropertyDescriptor) {
+  const originalMethod = descriptor.value;
+  const adjDescriptor: PropertyDescriptor = {
+    configurable: true,
+    enumerable: false,
+    get() {
+      const boundFunction = originalMethod.bind(this);
+      return boundFunction;
+    },
+  };
+  return adjDescriptor;
+}
+
+class Printer {
+  message = "This works";
+  @Autobind
+  showMessage() {
+    console.log(this.message);
   }
 }
 
-//
+const p = new Printer();
 
-//
+const button = document.querySelector("button")!;
+button?.addEventListener("click", p.showMessage);
 
-interface Bird {
-  type: "bird";
-  flyingSpeed: number;
+// Validation
+
+interface ValidatorConfig {
+  [property: string]: {
+    [validatableProp: string]: string[]; //['required','positive']
+  };
 }
-interface Horse {
-  type: "horse";
-  runningSpeed: number;
+
+const registeredValidators: ValidatorConfig = {};
+
+function Required(target: any, propertyName: string) {
+  registeredValidators[target.constructor.name] = {
+    ...registeredValidators[target.constructor.name],
+    [propertyName]: ["required"],
+  };
+}
+function PositiveNumber(target: any, propertyName: string) {
+  registeredValidators[target.constructor.name] = {
+    ...registeredValidators[target.constructor.name],
+    [propertyName]: ["positive"],
+  };
 }
 
-type Animal = Bird | Horse;
-
-function moveAnimal(animal: Animal) {
-  let speed;
-  switch (animal.type) {
-    case "bird":
-      speed = animal.flyingSpeed;
-      break;
-    case "horse":
-      speed = animal.runningSpeed;
+function validate(obj: any) {
+  const objValidatorConfig = registeredValidators[obj.constructor.name];
+  if (!objValidatorConfig) {
+    return true;
   }
-  console.log("the speed " + speed);
+  let isValid = true;
+  for (const prop in objValidatorConfig) {
+    for (const validator of objValidatorConfig[prop]) {
+      switch (validator) {
+        case "required":
+          isValid = isValid && !!obj[prop];
+          break;
+        case "positive":
+          isValid = isValid && !!obj[prop];
+          break;
+      }
+    }
+  }
 }
 
-moveAnimal({ type: "bird", flyingSpeed: 20 });
+class Course {
+  @Required
+  title: string;
+  @PositiveNumber
+  price: number;
 
-// TYPE CASTING
-// const userInputElement = <HTMLInputElement>(
-//   document.getElementById("user-input")!
-// );
-const userInputElement = document.getElementById(
-  "user-input"
-)! as HTMLInputElement;
-
-userInputElement.value = "Hi there";
-
-interface ErrorContainer {
-  [prop: string]: string;
+  constructor(t: string, p: number) {
+    this.title = t;
+    this.price = p;
+  }
 }
-const errorBag: ErrorContainer = {
-  email: "not a valid email",
-};
 
-// OPTIONAL CHAINING
+const courseForm = document.querySelector("form")!;
+courseForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const titleEl = document.getElementById("title") as HTMLInputElement;
+  const priceEl = document.getElementById("price") as HTMLInputElement;
 
-const fetchedUserData = {
-  id: "u1",
-  name: "kev",
-  job: { title: "CEO", description: "My own company" },
-};
+  const title = titleEl.value;
+  const price = +priceEl.value;
 
-
-console.log(fetchedUserData?.job?.title)
+  const createdCourse = new Course(title, price);
+  if (!validate(createdCourse)) {
+    alert("invalid input");
+    return;
+  }
+  console.log(createdCourse);
+});
