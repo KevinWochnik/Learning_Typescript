@@ -1,134 +1,90 @@
-type Admin = {
-  name: string;
-  privileges: string[];
-};
+const names: Array<string> = [];
 
-type Employee = {
-  name: string;
-  startDate: Date;
-};
+const promise: Promise<string> = new Promise((res, rej) => {
+  setTimeout(() => {
+    res("done");
+  }, 2000);
+});
 
-type ElevatedEmployee = Admin & Employee;
+promise.then((data) => {
+  data.split(" ");
+});
 
-const e1: ElevatedEmployee = {
-  name: "",
-  privileges: ["c"],
-  startDate: new Date(),
-};
-
-type Combinable = string | number;
-type Numeric = number | boolean;
-
-type Universal = Combinable & Numeric;
-
-function adding(a: number, b: number): number;
-function adding(a: string, b: string): string;
-
-// TYPE GUARDS
-function adding(a: Combinable, b: Combinable) {
-  if (typeof a === "string" || typeof b === "string") {
-    return a.toString() + b.toString();
-  }
-  return a + b;
+function merge<T extends object, U extends object>(objA: T, objB: U) {
+  return Object.assign(objA, objB);
 }
 
-const result = adding("kev", "woc");
-result.split("");
+console.log(merge({ name: "kev" }, { age: 24 }));
 
-type UnknownEmployee = Employee | Admin; //UNION TYPE
-
-function printEmpInf(emp: UnknownEmployee) {
-  console.log("name" + emp.name);
-
-  // TYPE GUARD
-  if ("privileges" in emp) {
-    console.log("privileges " + emp.privileges);
-  }
-  if ("startDate" in emp) {
-    console.log("startDate " + emp.startDate);
-  }
+interface Lengthy {
+  length: number;
 }
-printEmpInf(e1);
 
-class Motor {
-  drive() {
-    console.log("Driving...");
+function countAndDescribe<T extends Lengthy>(element: T): [T, string] {
+  let descriptionText = "Got no value";
+  if (element.length > 0) {
+    descriptionText = "got " + element.length + " elements.";
   }
+  return [element, descriptionText];
 }
-class Trolly {
-  drive() {
-    console.log("Driving a trolly");
+
+console.log(countAndDescribe("hi there!"));
+
+function extractAndConvert<T extends object, U extends keyof T>(
+  obj: T,
+  key: U
+) {
+  return obj[key];
+}
+
+extractAndConvert({ name: "kev" }, "name");
+
+class StorageItems<T> {
+  private data: T[] = [];
+  addItem(item: T) {
+    this.data.push(item);
   }
-  loadCargo(amount: number) {
-    console.log("Loading Cargo  " + amount);
+  removeItem(item: T) {
+    this.data.splice(this.data.indexOf(item), 1);
+  }
+  getItems() {
+    return [...this.data];
   }
 }
 
-type Vehicle = Motor | Trolly;
+const textStorage = new StorageItems<string>();
+textStorage.addItem("kev");
+textStorage.addItem("angel");
+textStorage.removeItem("kev");
+console.log(textStorage.getItems());
 
-const v1 = new Motor();
-const v2 = new Trolly();
+const numberStorage = new StorageItems<number>();
+numberStorage.addItem(2);
+console.log(numberStorage.getItems());
 
-function useVehicle(vehicle: Vehicle) {
-  vehicle.drive();
-  if (vehicle instanceof Trolly) {
-    vehicle.loadCargo(2);
-  }
+const objStorage = new StorageItems<object>();
+objStorage.addItem({ name: "kev" });
+objStorage.addItem({ name: "angel" });
+objStorage.removeItem({ name: "kev" });
+console.log(objStorage.getItems());
+
+interface CourseGoal {
+  title: string;
+  description: string;
+  completeDate: Date;
 }
 
-//
-
-//
-
-interface Bird {
-  type: "bird";
-  flyingSpeed: number;
-}
-interface Horse {
-  type: "horse";
-  runningSpeed: number;
-}
-
-type Animal = Bird | Horse;
-
-function moveAnimal(animal: Animal) {
-  let speed;
-  switch (animal.type) {
-    case "bird":
-      speed = animal.flyingSpeed;
-      break;
-    case "horse":
-      speed = animal.runningSpeed;
-  }
-  console.log("the speed " + speed);
+function createCourseGoal(
+  title: string,
+  description: string,
+  date: Date
+): CourseGoal {
+  let courseGoal: Partial<CourseGoal> = {};
+  courseGoal.title = title;
+  courseGoal.description = description;
+  courseGoal.completeDate = date;
+  return courseGoal as CourseGoal;
 }
 
-moveAnimal({ type: "bird", flyingSpeed: 20 });
-
-// TYPE CASTING
-// const userInputElement = <HTMLInputElement>(
-//   document.getElementById("user-input")!
-// );
-const userInputElement = document.getElementById(
-  "user-input"
-)! as HTMLInputElement;
-
-userInputElement.value = "Hi there";
-
-interface ErrorContainer {
-  [prop: string]: string;
-}
-const errorBag: ErrorContainer = {
-  email: "not a valid email",
-};
-
-// OPTIONAL CHAINING
-
-const fetchedUserData = {
-  id: "u1",
-  name: "kev",
-  job: { title: "CEO", description: "My own company" },
-};
-
-
-console.log(fetchedUserData?.job?.title)
+const nameArray: Readonly<string[]> = ["kev", "idel"];
+// nameArray.push("angel");
