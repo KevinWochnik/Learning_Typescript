@@ -8,6 +8,8 @@ interface Validatable {
   max?: number;
 }
 
+
+
 function validate(validatableInput: Validatable) {
   let isValid = true;
   if (validatableInput.required) {
